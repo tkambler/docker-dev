@@ -1,0 +1,8 @@
+repositories:
+  - url: https://github.com/tkambler/docker-example1.git
+    branch: master
+    dest: ./app
+services:
+  app:
+    export:
+      - /opt/app/node_modules:./app/node_modules
