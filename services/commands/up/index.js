@@ -59,9 +59,11 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
                 spinner.text = `Starting service: ${service}`;
             });
 
-            return await(manager.up({
+            await(manager.up({
                 'force': program.force
             }));
+
+            spinner.succeed(`Service started: ${service}`);
 
         });
 

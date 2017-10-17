@@ -101,8 +101,10 @@ services:
     export:
       - /opt/app/node_modules:node_modules
     # Commands to be run immediately after the service is started.
-    build-scripts:
-      - ["grunt", "reset-db"]
+    service-scripts:
+      post-up:
+        - ["knex", "migrate:latest"]
+        - ["knex", "seed:run"]
 ```
 
 ```
@@ -141,6 +143,12 @@ In this example, our image's `/opt/app/node_modules` folder is mapped to `~/work
 
 ### up
 
-Bring up services without building images:
+Bring up services:
 
     $ docker-dev up
+
+### down
+
+Bring services down with:
+
+    $ docker-dev down

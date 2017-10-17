@@ -10,6 +10,5 @@ services:
       post-up:
         - ["knex", "migrate:latest"]
         - ["knex", "seed:run"]
-    host-scripts:
-      pre-up:
-      post-up:
+      pre-down:
+        - ["sh", "-c", "whoami"]

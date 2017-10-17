@@ -23,13 +23,13 @@ exports = module.exports = function(config, docker, rekwire) {
             this.composerEntry = config.get(`composer:services:${serviceName}`);
             this.devEntry = config.get(`dev:services:${serviceName}`);
 
-            ['build', 'executeScripts', 'exportData', 'getServiceContainers', 'up', 'scale'].forEach((method) => {
+            ['build', 'executeCommand', 'executeScripts', 'exportData', 'getServiceContainers', 'up', 'scale'].forEach((method) => {
                 this[method] = async(this[method]);
             });
 
         }
 
-        stopAndRemoveExistingContainers(force) {
+        stopAndRemoveExistingContainers() {
 
             const existingContainers = await(this.getServiceContainers());
 
@@ -45,15 +45,23 @@ exports = module.exports = function(config, docker, rekwire) {
                 return await(container.remove());
             });
 
-            if (runningContainers.length > 0) {
-                if (!force) {
-                    return;
-                }
-                debug(`Found ${runningContainers.length} existing container(s) for service: ${this.serviceName}`);
-                this.emit('stopping_containers', {
-                    'count': runningContainers.length
-                });
+            if (runningContainers.length === 0) {
+                return;
             }
+
+            debug(`Found ${runningContainers.length} existing container(s) for service: ${this.serviceName}`);
+            this.emit('stopping_containers', {
+                'count': runningContainers.length
+            });
+
+            const scripts = _.get(this, 'devEntry.service-scripts.pre-down') || [];
+            const [ container ] = runningContainers;
+
+            scripts.forEach((cmd) => {
+                await(
+                    this.executeCommand(container, cmd)
+                );
+            });
 
             runningContainers.forEach((container) => {
                 debug(`Stopping container: ${container.id}`);
@@ -189,36 +197,37 @@ exports = module.exports = function(config, docker, rekwire) {
 
         executeCommand(container, cmd) {
 
-            return container.execAsync({
-                'Cmd': cmd,
-                'AttachStdout': true,
-                'AttachStderr': true
-            })
-                .then((exec) => {
+            const exec = await(
+                container.execAsync({
+                    'Cmd': cmd,
+                    'AttachStdout': true,
+                    'AttachStderr': true
+                })
+            );
 
-                    return new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
 
-                        exec.start((err, stream) => {
+                exec.start((err, stream) => {
 
-                            if (err) {
-                                return reject(err);
-                            }
+                    if (err) {
+                        return reject(err);
+                    }
 
-                            stream.on('data', (chunk) => {
-//                                 console.log(chunk.toString());
-                            });
-                            stream.on('error', (err) => {
-                                return reject(err);
-                            });
-                            stream.on('end', () => {
-                                return resolve();
-                            });
+                    stream.on('data', (chunk) => {
+//                         console.log(chunk.toString());
+                    });
 
-                        });
+                    stream.on('error', (err) => {
+                        return reject(err);
+                    });
 
+                    stream.on('end', () => {
+                        return resolve();
                     });
 
                 });
+
+            });
 
         }
 
@@ -269,6 +278,12 @@ exports = module.exports = function(config, docker, rekwire) {
             await(pause(3));
             await(this.verifyStatus());
             await(this.executeScripts());
+
+        }
+
+        down() {
+
+            await(this.stopAndRemoveExistingContainers());
 
         }
 
