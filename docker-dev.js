@@ -8,8 +8,10 @@ const pkg = require('./package.json');
 
 program
     .version(pkg.version)
-    .command('up', 'Create and start containers')
-    .command('down', 'Stop running containers');
+    .command('up', 'Create and start containers.')
+    .command('down', 'Stop running containers.')
+    .command('build', 'Builds one or more services.')
+    .command('export', 'Exports files from one or more images.');
 
 if (!process.argv.slice(2).length || process.argv[2] === '--help' || process.argv[2] === '-h') {
     const banner = figlet.textSync('Docker-Dev', {

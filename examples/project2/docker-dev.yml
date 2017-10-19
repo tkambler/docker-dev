@@ -12,3 +12,4 @@ services:
         - ["knex", "seed:run"]
       pre-down:
         - ["sh", "-c", "whoami"]
+    shell: "sh"

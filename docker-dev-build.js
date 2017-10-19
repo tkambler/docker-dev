@@ -34,8 +34,7 @@ process.on('unhandledRejection', (err, p) => {
 
 program
     .option('-p, --project [project-folder]', 'Project Folder')
-    .option('-s, --service [name]', 'Service')
-    .option('-f, --force', 'Force the creation of new services, even if they are already running')
+    .option('-f, --force', 'Force the building of new images, even if pre-existing images already exist.')
     .parse(process.argv);
 
 const projectFolder = findProject(program.project);
@@ -58,6 +57,6 @@ container.constant('projectName', projectName);
 container.constant('program', program);
 container.constant('yml', yml);
 
-container.service('up', require('./services/commands/up'));
+container.service('build', require('./services/commands/build'));
 
-container.load('up');
+container.load('build');

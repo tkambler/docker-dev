@@ -4,5 +4,6 @@ repositories:
     dest: ./app
 services:
   app:
+    shell: "sh"
     export:
       - /opt/app/node_modules:./app/node_modules

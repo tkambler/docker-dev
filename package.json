@@ -1,6 +1,6 @@
 {
   "name": "docker-dev",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -24,6 +24,7 @@
     "figlet": "^1.2.0",
     "find-up": "^2.1.0",
     "fs-extra": "^4.0.2",
+    "inquirer": "^3.3.0",
     "js-yaml": "^3.10.0",
     "lodash": "^4.17.4",
     "observatory": "^1.0.0",

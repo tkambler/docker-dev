@@ -19,9 +19,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 
             const manager = new ServiceManager(service);
 
-            await(
-                manager.down()
-            );
+            await(manager.down());
 
             spinner.succeed(`Service stopped: ${service}`);
 

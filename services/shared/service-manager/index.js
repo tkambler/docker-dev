@@ -87,6 +87,7 @@ exports = module.exports = function(config, docker, rekwire) {
                 .then((srcImgData) => {
                     if (srcImgData && !force) {
                         debug(`Image already exists for service: ${this.serviceName}`);
+                        this.emit('skip_build');
                         return;
                     }
                     debug(`Building image for service: ${this.serviceName}`);
@@ -153,7 +154,13 @@ exports = module.exports = function(config, docker, rekwire) {
                     if (!stats) {
                         return true;
                     } else {
-                        return force;
+                        if (!force) {
+                            this.emit('skip_export');
+                            return false;
+                        } else {
+                            fs.removeSync(dest);
+                            return true;
+                        }
                     }
 
                 });
@@ -267,7 +274,7 @@ exports = module.exports = function(config, docker, rekwire) {
 
         }
 
-        up({ force = false }) {
+        up(force = false) {
 
             debug(`Bringing up service`, this.serviceName);
 
