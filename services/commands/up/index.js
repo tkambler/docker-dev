@@ -1,6 +1,6 @@
 'use strict';
 
-exports = module.exports = function(config, program, rekwire, docker, ServiceManager) {
+exports = module.exports = function(config, program, rekwire, docker, ServiceManager, log) {
 
     const { async, await } = require('asyncawait');
     const prioritize = rekwire('prioritize');
@@ -73,4 +73,4 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 };
 
 exports['@singleton'] = true;
-exports['@require'] = ['config', 'program', 'rekwire', 'docker', 'service-manager'];
+exports['@require'] = ['config', 'program', 'rekwire', 'docker', 'service-manager', 'log'];

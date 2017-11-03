@@ -1,6 +1,6 @@
 'use strict';
 
-exports = module.exports = function(config, docker, rekwire) {
+exports = module.exports = function(config, docker, rekwire, log) {
 
     const Promise = require('bluebird');
     const EventEmitter2 = require('eventemitter2').EventEmitter2;
@@ -101,10 +101,14 @@ exports = module.exports = function(config, docker, rekwire) {
                         let out = '';
                         let err = '';
                         spawned.stdout.on('data', (data) => {
-                            out = out + data.toString('utf8');
+                            data = data.toString('utf8');
+                            out = out + data;
+                            log(data);
                         });
                         spawned.stderr.on('data', (data) => {
-                            err = err + data.toString('utf8');
+                            data = data.toString('utf8');
+                            err = err + data;
+                            log(data);
                         });
                         spawned.on('close', (code) => {
                             if (code === 0) {
@@ -182,10 +186,14 @@ exports = module.exports = function(config, docker, rekwire) {
                 let out = '';
                 let err = '';
                 spawned.stdout.on('data', (data) => {
-                    out = out + data.toString('utf8');
+                    data = data.toString('utf8');
+                    out = out + data;
+                    log(data);
                 });
                 spawned.stderr.on('data', (data) => {
-                    err = err + data.toString('utf8');
+                    data = data.toString('utf8');
+                    err = err + data;
+                    log(data);
                 });
                 spawned.on('close', (code) => {
                     if (code === 0) {
@@ -214,22 +222,35 @@ exports = module.exports = function(config, docker, rekwire) {
 
             return new Promise((resolve, reject) => {
 
-                exec.start((err, stream) => {
+                exec.start({
+                }, (err, stream) => {
 
                     if (err) {
                         return reject(err);
                     }
 
                     stream.on('data', (chunk) => {
-//                         console.log(chunk.toString());
+                        log(chunk.toString('utf8'));
                     });
 
                     stream.on('error', (err) => {
+                        console.log('err', err);
                         return reject(err);
                     });
 
-                    stream.on('end', () => {
-                        return resolve();
+                    stream.on('end', function() {
+                        exec.inspect((err, data) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            if (data.ExitCode === 0) {
+                                return resolve();
+                            } else {
+                                return reject(new Error(`Command exited with status code ${data.ExitCode}: ${cmd.join(' ')}`));
+                            }
+                            console.log('data', data);
+                            return resolve();
+                        });
                     });
 
                 });
@@ -322,4 +343,4 @@ exports = module.exports = function(config, docker, rekwire) {
 };
 
 exports['@singleton'] = true;
-exports['@require'] = ['config', 'docker', 'rekwire'];
+exports['@require'] = ['config', 'docker', 'rekwire', 'log'];

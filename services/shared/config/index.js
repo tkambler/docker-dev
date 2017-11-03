@@ -1,6 +1,6 @@
 'use strict';
 
-exports = module.exports = function(yml, projectFolder, projectName) {
+exports = module.exports = function(yml, projectFolder, projectName, logFile) {
 
     const Promise = require('bluebird');
     const path = require('path');
@@ -16,10 +16,11 @@ exports = module.exports = function(yml, projectFolder, projectName) {
             config.use(yml);
             config.set('projectFolder', projectFolder);
             config.set('projectName', projectName);
+            config.set('logFile', logFile);
 
         });
 
 };
 
 exports['@singleton'] = true;
-exports['@require'] = ['yml', 'projectFolder', 'projectName'];
+exports['@require'] = ['yml', 'projectFolder', 'projectName', 'logFile'];
