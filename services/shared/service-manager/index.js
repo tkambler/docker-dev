@@ -77,8 +77,39 @@ exports = module.exports = function(config, docker, rekwire, log) {
             if (!this.composerEntry.image) {
                 return;
             }
-
-            return docker.pullAsync(this.composerEntry.image);
+            
+            this.emit('pulling_image', {
+                'image': this.composerEntry.image
+            });
+            
+            return new Promise((resolve, reject) => {
+                let spawned = spawn('docker-compose', ['pull', this.serviceName], {
+                    'cwd': config.get('projectFolder')
+                });
+                let out = '';
+                let err = '';
+                spawned.stdout.on('data', (data) => {
+                    data = data.toString('utf8');
+                    out = out + data;
+                    log(data);
+                });
+                spawned.stderr.on('data', (data) => {
+                    data = data.toString('utf8');
+                    err = err + data;
+                    log(data);
+                });
+                spawned.on('close', (code) => {
+                    if (code === 0) {
+                        return resolve();
+                    } else {
+                        return reject({
+                            'out': out,
+                            'err': err,
+                            'code': code
+                        });
+                    }
+                });
+            });
 
         }
 
@@ -258,8 +289,6 @@ exports = module.exports = function(config, docker, rekwire, log) {
                             } else {
                                 return reject(new Error(`Command exited with status code ${data.ExitCode}: ${cmd.join(' ')}`));
                             }
-                            console.log('data', data);
-                            return resolve();
                         });
                     });
 

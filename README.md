@@ -89,30 +89,6 @@ So far, we've done nothing that goes beyond the traditional Docker development p
 ###
 ### ~/workspace/docker-dev.yml
 ###
-services:
-  # Corresponds to the 'app' service that we defined in docker-compose.yml
-  app:
-    repository:
-      # The URL of the Git repository that houses this project
-      url: git@github.com:tkambler/app.git
-      # The default branch to be checked out when the development environment is brought online
-      branch: develop
-    # Files / folders within this project's image that will be copied to the host before it is brought online
-    export:
-      - /opt/app/node_modules:node_modules
-    # Commands to be run immediately after the service is started.
-    service-scripts:
-      post-up:
-        - ["knex", "migrate:latest"]
-        - ["knex", "seed:run"]
-```
-
-```
-###
-### Within my development environment, this file is located at:
-###
-### ~/workspace/docker-dev.yml
-###
 repositories:
   - url: https://github.com/tkambler/docker-example1.git
     # The default branch to be checked out when the development environment is brought online

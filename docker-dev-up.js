@@ -7,8 +7,6 @@ const path = require('path');
 const findProject = require('./lib/project-finder');
 const loadYaml = require('./lib/yaml-loader');
 const errorHandler = require('./lib/error-handler');
-const debug = require('debug')('docker-dev');
-const prioritize = require('./lib/prioritize');
 
 process.on('uncaughtException', errorHandler);
 
@@ -18,14 +16,12 @@ process.on('unhandledRejection', (err, p) => {
 
     if (err.out) {
         console.log(err.out);
-    }
-
-    if (err.err) {
+    } else if (err.err) {
         console.log(err.err);
-    }
-
-    if (err.message) {
+    } else if (err.message) {
         console.log(err.message);
+    } else if (typeof err === 'string') {
+        console.log(err);
     }
 
     process.exit(1);

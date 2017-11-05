@@ -5,7 +5,6 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
     const { async, await } = require('asyncawait');
     const prioritize = rekwire('prioritize');
     const devConfig = config.get('dev');
-    const chalk = require('chalk');
     const ora = require('ora');
     let spinner = ora().start();
 
@@ -45,6 +44,10 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 
             manager.on('stopping_containers', ({ count }) => {
                 spinner.text = `Stopping ${count} existing container(s) for service: ${service}`
+            });
+            
+            manager.on('pulling_image', ({ image }) => {
+                spinner.text = `Pulling image ${image} for service: ${service}`;
             });
 
             manager.on('building_image', ({ image }) => {
