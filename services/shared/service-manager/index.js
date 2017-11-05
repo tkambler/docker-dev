@@ -23,7 +23,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
             this.composerEntry = config.get(`composer:services:${serviceName}`);
             this.devEntry = config.get(`dev:services:${serviceName}`);
 
-            ['build', 'executeCommand', 'executeScripts', 'exportData', 'getServiceContainers', 'up', 'scale'].forEach((method) => {
+            ['build', 'pull', 'executeCommand', 'executeScripts', 'exportData', 'getServiceContainers', 'up', 'scale'].forEach((method) => {
                 this[method] = async(this[method]);
             });
 
@@ -69,6 +69,16 @@ exports = module.exports = function(config, docker, rekwire, log) {
                 debug(`Removing container: ${container.id}`);
                 await(container.remove());
             });
+
+        }
+
+        pull() {
+
+            if (!this.composerEntry.image) {
+                return;
+            }
+
+            return docker.pullAsync(this.composerEntry.image);
 
         }
 
@@ -300,6 +310,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
             debug(`Bringing up service`, this.serviceName);
 
             await(this.stopAndRemoveExistingContainers(force));
+            await(this.pull());
             await(this.build(force));
             await(this.exportData(force));
             await(this.bringUp(force));
