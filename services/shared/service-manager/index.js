@@ -262,6 +262,8 @@ exports = module.exports = function(config, docker, rekwire, log) {
             );
 
             return new Promise((resolve, reject) => {
+                
+                this.emit('executing_command', cmd);
 
                 exec.start({
                 }, (err, stream) => {
@@ -300,7 +302,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
         executeScripts() {
 
-            const scripts = this.devEntry['service-scripts']['post-up'];
+            const scripts = _.get(this, 'devEntry.service-scripts.post-up') || [];
 
             const runningContainers = await(this.getServiceContainers())
                 .filter((container) => {
