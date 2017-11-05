@@ -12,7 +12,7 @@ exports = module.exports = function(logFile) {
             return _.isString(arg) ? arg : JSON.stringify(arg);
         }).join(' ').replace(/^\s+|\s+$/g, '') + os.EOL;
 
-        return fs.writeFileSync(logFile, args);
+        return fs.appendFileSync(logFile, args);
 
     };
 
