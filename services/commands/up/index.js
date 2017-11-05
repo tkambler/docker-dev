@@ -50,7 +50,11 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             });
             
             manager.on('executing_command', (cmd) => {
-                spinner.info(`Executing command: ${cmd.join(' ')}`);
+                spinner.info(`Executing container command: ${cmd.join(' ')}`);
+            });
+            
+            manager.on('executing_host_command', (cmd) => {
+                spinner.info(`Executing host command: ${cmd.join(' ')}`);
             });
             
             manager.on('pulling_image', ({ image }) => {

@@ -320,6 +320,42 @@ exports = module.exports = function(config, docker, rekwire, log) {
                     this.executeCommand(container, cmd)
                 );
             });
+            
+            const hostScripts = _.get(this, 'devEntry.host-scripts.post-up') || [];
+            
+            hostScripts.forEach((cmd) => {
+                this.emit('executing_host_command', cmd);
+                await(
+                    new Promise((resolve, reject) => {
+                        let spawned = spawn(cmd[0], cmd.slice(1), {
+                            'cwd': config.get('projectFolder')
+                        });
+                        let out = '';
+                        let err = '';
+                        spawned.stdout.on('data', (data) => {
+                            data = data.toString('utf8');
+                            out = out + data;
+                            log(data);
+                        });
+                        spawned.stderr.on('data', (data) => {
+                            data = data.toString('utf8');
+                            err = err + data;
+                            log(data);
+                        });
+                        spawned.on('close', (code) => {
+                            if (code === 0) {
+                                return resolve();
+                            } else {
+                                return reject({
+                                    'out': out,
+                                    'err': err,
+                                    'code': code
+                                });
+                            }
+                        });
+                    })
+                );
+            });
 
         }
 
