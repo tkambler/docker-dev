@@ -11,6 +11,7 @@ program
     .command('up', 'Create and start containers.')
     .command('down', 'Stop running containers.')
     .command('build', 'Builds one or more services.')
+    .command('clone', 'Clone repositories.')
     .command('export', 'Exports files from one or more images.');
 
 if (!process.argv.slice(2).length || process.argv[2] === '--help' || process.argv[2] === '-h') {
