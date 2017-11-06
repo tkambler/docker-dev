@@ -26,6 +26,10 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             cloner.on('clone', (repo) => {
                 spinner.info(`Cloning repository: ${repo.url}`);
             });
+            
+            cloner.on('checkout', (repo) => {
+                spinner.info(`Checking out branch: ${repo.branch}`);
+            });
 
             return cloner.clone();
 
