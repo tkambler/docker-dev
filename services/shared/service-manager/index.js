@@ -252,6 +252,21 @@ exports = module.exports = function(config, docker, rekwire, log) {
         }
 
         executeCommand(container, cmd) {
+            
+            if (!container) {
+
+                const runningContainers = await(this.getServiceContainers())
+                    .filter((container) => {
+                        return container.data.State.Status === 'running';
+                    });
+    
+                if (runningContainers.length === 0) {
+                    throw new Error(`Unable to execute service scripts. No running containers found for service: ${this.serviceName}`);
+                }
+    
+                container = runningContainers[0];
+
+            }
 
             const exec = await(
                 container.execAsync({
