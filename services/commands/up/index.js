@@ -37,7 +37,15 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 
         await(clone());
 
-        const prioritized = prioritize(config.get('composer:services'));
+        let prioritized = prioritize(config.get('composer:services'));
+
+        if (program.service) {
+            if (prioritized.indexOf(program.service) === -1) {
+                throw new Error(`Unknown service: ${program.service}`);
+            } else {
+                prioritized = [program.service];
+            }
+        }
 
         prioritized.forEach((service) => {
 
