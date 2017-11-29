@@ -1,6 +1,6 @@
 'use strict';
 
-exports = module.exports = function(config, program, rekwire, docker, ServiceManager, log) {
+exports = module.exports = function(config, program, rekwire, docker, ServiceManager, hostfileManager, log) {
 
     const { async, await } = require('asyncawait');
     const prioritize = rekwire('prioritize');
@@ -26,7 +26,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             cloner.on('clone', (repo) => {
                 spinner.info(`Cloning repository: ${repo.url}`);
             });
-            
+
             cloner.on('checkout', (repo) => {
                 spinner.info(`Checking out branch: ${repo.branch}`);
             });
@@ -54,21 +54,21 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             }
 
             const manager = new ServiceManager(service);
-            
+
             spinner.info(`Loading service: ${service}`);
 
             manager.on('stopping_containers', ({ count }) => {
                 spinner.info(`Stopping ${count} existing container(s) for service: ${service}`);
             });
-            
+
             manager.on('executing_command', (cmd) => {
                 spinner.info(`Executing container command: ${cmd.join(' ')}`);
             });
-            
+
             manager.on('executing_host_command', (cmd) => {
                 spinner.info(`Executing host command: ${cmd.join(' ')}`);
             });
-            
+
             manager.on('pulling_image', ({ image }) => {
                 spinner.info(`Pulling image ${image} for service: ${service}`);
             });
@@ -94,9 +94,11 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
         spinner.stop();
         spinner.succeed(`${prioritized.length} service(s) are ready.`);
 
+        hostfileManager.set(devConfig.hostnames);
+
     })();
 
 };
 
 exports['@singleton'] = true;
-exports['@require'] = ['config', 'program', 'rekwire', 'docker', 'service-manager', 'log'];
+exports['@require'] = ['config', 'program', 'rekwire', 'docker', 'service-manager', 'hostfile-manager', 'log'];

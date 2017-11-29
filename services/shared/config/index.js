@@ -6,7 +6,7 @@ exports = module.exports = function(yml, projectFolder, projectName, logFile) {
     const path = require('path');
     const confit = Promise.promisifyAll(require('confit')());
     const _ = require('lodash');
-    
+
     return confit.createAsync()
         .tap((config) => {
 
@@ -14,7 +14,7 @@ exports = module.exports = function(yml, projectFolder, projectName, logFile) {
                 repo.dest = path.isAbsolute(repo.dest) ? repo.dest : path.resolve(projectFolder, repo.dest);
                 return repo;
             });
-            
+
             _.each(yml.dev.services, (options, service) => {
                 yml.dev.services[service] = options || {};
             });

@@ -77,11 +77,11 @@ exports = module.exports = function(config, docker, rekwire, log) {
             if (!this.composerEntry.image) {
                 return;
             }
-            
+
             this.emit('pulling_image', {
                 'image': this.composerEntry.image
             });
-            
+
             return new Promise((resolve, reject) => {
                 let spawned = spawn('docker-compose', ['pull', this.serviceName], {
                     'cwd': config.get('projectFolder')
@@ -252,18 +252,18 @@ exports = module.exports = function(config, docker, rekwire, log) {
         }
 
         executeCommand(container, cmd) {
-            
+
             if (!container) {
 
                 const runningContainers = await(this.getServiceContainers())
                     .filter((container) => {
                         return container.data.State.Status === 'running';
                     });
-    
+
                 if (runningContainers.length === 0) {
                     throw new Error(`Unable to execute service scripts. No running containers found for service: ${this.serviceName}`);
                 }
-    
+
                 container = runningContainers[0];
 
             }
@@ -277,7 +277,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
             );
 
             return new Promise((resolve, reject) => {
-                
+
                 this.emit('executing_command', cmd);
 
                 exec.start({
@@ -335,9 +335,9 @@ exports = module.exports = function(config, docker, rekwire, log) {
                     this.executeCommand(container, cmd)
                 );
             });
-            
+
             const hostScripts = _.get(this, 'devEntry.host-scripts.post-up') || [];
-            
+
             hostScripts.forEach((cmd) => {
                 this.emit('executing_host_command', cmd);
                 await(
@@ -392,7 +392,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
             debug(`Bringing up service`, this.serviceName);
 
             await(this.stopAndRemoveExistingContainers(force));
-            await(this.pull());
+            // await(this.pull());
             await(this.build(force));
             await(this.exportData(force));
             await(this.bringUp(force));

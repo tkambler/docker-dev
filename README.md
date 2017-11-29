@@ -105,15 +105,38 @@ services:
       post-up:
         - ["knex", "migrate:latest"]
         - ["knex", "seed:run"]
+hostnames:
+  - app.site
 ```
 
-Within our `docker-dev.yml` file, we define services that correspond with those found in `docker-compose.yml`. The service options that are available to us within `docker-dev.yml` are outlined below.
+The various options that this file supports are outlined below.
+
+#### repositories
+
+An array of Git repositories. When our development environment is launched via the `docker-dev up` command, any repositories that are defined here will first be cloned before any other steps occur.
+
+#### services
+
+Within our `docker-dev.yml` file, we define services that correspond with those found in `docker-compose.yml`. For each service, we can define a number of options:
 
 *export*
 
 Each entry within this list maps a file or folder that is located within our project's image to a location on our host's local filesystem. **After** our service's image has been built, but **before** its corresponding container is started, these files will be copied **from** the image **to** the host. This is important, in that it allows us to build this service's dependencies within the appropriate runtime environment.
 
 In this example, our image's `/opt/app/node_modules` folder is mapped to `~/workspace/app/node_modules` on our host.
+
+*host-scripts.post-up*
+
+An array of scripts to be executed on the host immediately after this service is brought on-line.
+
+*service-scripts.post-up*
+
+An array of scripts to be executed _within the container_ immediately after this service is brought on-line.
+
+
+#### hostnames
+
+An array of hostnames. When our development environment is launched via the `docker-dev up` command, the host's `hosts` file will be updated such that each of the hostnames defined here map to the loopback address of `127.0.0.1`.
 
 ## Commands
 

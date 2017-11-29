@@ -39,6 +39,7 @@ const projectName = path.basename(projectFolder).replace(/\-/g, '');
 
 container.constant('projectFolder', projectFolder);
 container.constant('projectName', projectName);
+container.constant('logFile', path.resolve(projectFolder, 'docker-dev.log'));
 container.constant('program', program);
 container.constant('yml', yml);
 
