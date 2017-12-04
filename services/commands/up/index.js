@@ -8,6 +8,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
     const _ = require('lodash');
     const ora = require('ora');
     const open = require('open');
+    const spawn = rekwire('spawn');
     let spinner = ora().start();
 
     async(() => {
@@ -49,6 +50,19 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
                 prioritized = [program.service];
             }
         }
+        
+        const cacheFrom = [];
+        _.each(config.get('composer:services'), (service, serviceName) => {
+            cacheFrom.splice(cacheFrom.length, 0, ...(_.get(service, 'build.cache_from') || []));
+        });
+        cacheFrom.forEach((image) => {
+            spinner.info(`Pulling image: ${image}`);
+            await(spawn('docker', [
+                'pull',
+                image
+            ]));
+            spinner.info(`Image pulled: ${image}`);
+        });
 
         let started = 0;
 
