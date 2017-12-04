@@ -81,7 +81,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             });
 
             manager.on('building_image', ({ image }) => {
-                spinner.info(`Building image ${image} for service: ${service}`);
+                spinner.info(`Building image for service: ${service}`);
             });
 
             manager.on('exporting_data', () => {

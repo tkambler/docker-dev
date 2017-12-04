@@ -123,7 +123,15 @@ exports = module.exports = function(config, docker, rekwire, log) {
                 return;
             }
 
-            const srcImg = Promise.promisifyAll(docker.getImage(this.composerEntry.image));
+            let imgName;
+
+            if (this.composerEntry.image) {
+                imgName = this.composerEntry.image;
+            } else {
+                imgName = `${config.get('projectName')}_${this.serviceName}`;
+            }
+
+            const srcImg = Promise.promisifyAll(docker.getImage(imgName));
 
             return srcImg.inspectAsync()
                 .catch((err) => {
@@ -175,6 +183,14 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
             let devExports = _.get(this, 'devEntry.export') || [];
 
+            let imgName;
+
+            if (this.composerEntry.image) {
+                imgName = this.composerEntry.image;
+            } else {
+                imgName = `${config.get('projectName')}_${this.serviceName}`;
+            }
+
             devExports = devExports.map((devExport) => {
                 let [src, dest] = devExport.split(':');
                 if (!path.isAbsolute(src)) {
@@ -182,9 +198,6 @@ exports = module.exports = function(config, docker, rekwire, log) {
                 }
                 if (!path.isAbsolute(dest)) {
                     dest = path.resolve(config.get('projectFolder'), dest);
-                }
-                if (!this.composerEntry.image) {
-                    throw new Error(`Service does not specify an image in docker-compose.yml: ${this.serviceName}`);
                 }
                 return {
                     'src': src,
@@ -203,20 +216,15 @@ exports = module.exports = function(config, docker, rekwire, log) {
                     if (!stats) {
                         return true;
                     } else {
-                        if (!force) {
-                            this.emit('skip_export');
-                            return false;
-                        } else {
-                            fs.removeSync(dest);
-                            return true;
-                        }
+                        fs.removeSync(dest);
+                        return true;
                     }
 
                 });
 
             if (devExports.length > 0) {
                 this.emit('exporting_data');
-                return await(docker.exportFromImage(this.composerEntry.image, devExports));
+                return await(docker.exportFromImage(imgName, devExports));
             }
 
         }

@@ -1,6 +1,6 @@
 {
   "name": "docker-dev",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A lightweight CLI utility that extends docker-compose with functionality that is particularly useful in a development environment.",
   "main": "index.js",
   "bin": {
