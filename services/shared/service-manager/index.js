@@ -23,13 +23,13 @@ exports = module.exports = function(config, docker, rekwire, log) {
             this.composerEntry = config.get(`composer:services:${serviceName}`);
             this.devEntry = config.get(`dev:services:${serviceName}`);
 
-            ['build', 'pull', 'executeCommand', 'executeScripts', 'exportData', 'getServiceContainers', 'up', 'scale'].forEach((method) => {
+            ['bringUp', 'build', 'pull', 'executeCommand', 'executeScripts', 'exportData', 'getServiceContainers', 'isRunning', 'up', 'scale'].forEach((method) => {
                 this[method] = async(this[method]);
             });
 
         }
 
-        stopAndRemoveExistingContainers() {
+        stopExistingContainers(remove = false) {
 
             const existingContainers = await(this.getServiceContainers());
 
@@ -41,9 +41,11 @@ exports = module.exports = function(config, docker, rekwire, log) {
                 return container.data.State.Status !== 'running';
             });
 
-            nonRunningContainers.forEach((container) => {
-                return await(container.remove());
-            });
+            if (remove) {
+                nonRunningContainers.forEach((container) => {
+                    return await(container.remove());
+                });
+            }
 
             if (runningContainers.length === 0) {
                 return;
@@ -66,8 +68,10 @@ exports = module.exports = function(config, docker, rekwire, log) {
             runningContainers.forEach((container) => {
                 debug(`Stopping container: ${container.id}`);
                 await(container.stop());
-                debug(`Removing container: ${container.id}`);
-                await(container.remove());
+                if (remove) {
+                    debug(`Removing container: ${container.id}`);
+                    await(container.remove());
+                }
             });
 
         }
@@ -217,37 +221,127 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
         }
 
-        bringUp() {
+        bringUp(startDeps = true) {
 
-            return new Promise((resolve, reject) => {
-                this.emit('starting_service');
-                let spawned = spawn('docker-compose', ['up', '-d', this.serviceName], {
-                    'cwd': config.get('projectFolder')
-                });
-                let out = '';
-                let err = '';
-                spawned.stdout.on('data', (data) => {
-                    data = data.toString('utf8');
-                    out = out + data;
-                    log(data);
-                });
-                spawned.stderr.on('data', (data) => {
-                    data = data.toString('utf8');
-                    err = err + data;
-                    log(data);
-                });
-                spawned.on('close', (code) => {
-                    if (code === 0) {
-                        return resolve();
-                    } else {
-                        return reject({
-                            'out': out,
-                            'err': err,
-                            'code': code
-                        });
-                    }
-                });
+            const existingContainers = await(this.getServiceContainers());
+            const existingContainerIds = existingContainers.map((container) => {
+                return container.id;
             });
+//             console.log('CONTAINERS1', JSON.stringify(existingContainerIds, null, 4));
+
+            const args = ['up', '-d', this.serviceName];
+
+            if (!startDeps) {
+                args.splice(1, 0, '--no-deps');
+            }
+
+            const launch = () => {
+
+                return new Promise((resolve, reject) => {
+                    this.emit('starting_service');
+                    let spawned = spawn('docker-compose', args, {
+                        'cwd': config.get('projectFolder')
+                    });
+                    let out = '';
+                    let err = '';
+                    spawned.stdout.on('data', (data) => {
+                        data = data.toString('utf8');
+                        out = out + data;
+                        log(data);
+                    });
+                    spawned.stderr.on('data', (data) => {
+                        data = data.toString('utf8');
+                        err = err + data;
+                        log(data);
+                    });
+                    spawned.on('close', (code) => {
+                        if (code === 0) {
+                            if (!this.devEntry.require_healthcheck) {
+                                this.emit('service_started');
+                            }
+                            return resolve();
+                        } else {
+                            return reject({
+                                'out': out,
+                                'err': err,
+                                'code': code
+                            });
+                        }
+                    });
+                });
+
+            };
+
+            const healthCheckTimeout = parseInt(this.devEntry.healthcheck_timeout, 10) || 30; // seconds
+
+            const waitForHealth = async(() => {
+
+                this.emit('wait_healthcheck');
+
+                const start = (new Date()).getTime();
+
+                return new Promise((resolve, reject) => {
+
+                    const intervalId = setInterval(() => {
+
+                            this.getServiceContainers()
+                                .filter((container) => {
+                                    return container.data.State.Status === 'running';
+                                })
+                                .then((runningContainers) => {
+
+                                    let pass = 0;
+                                    const healthChecks = [];
+
+                                    runningContainers.forEach((container) => {
+                                        const health = _.get(container, 'data.State.Health');
+//                                         console.log(JSON.stringify(health, null, 4));
+                                        if (_.get(health, 'Status') === 'healthy') {
+                                            pass++;
+                                        }
+                                        healthChecks.push(health);
+                                    });
+
+//                                     console.log(JSON.stringify(healthChecks, null, 4));
+
+                                    if (pass === runningContainers.length) {
+                                        clearInterval(intervalId);
+                                        this.emit('service_started');
+                                        return resolve();
+                                    }
+
+                                    const diff = Math.floor(((new Date()).getTime() - start) / 1000);
+                                    if (diff > healthCheckTimeout) {
+                                        this.emit('healthcheck_failed', {
+                                            'healthchecks': healthChecks
+                                        });
+                                        return reject();
+                                    }
+
+                                });
+
+                    }, 4000);
+
+                });
+
+            });
+
+            await(launch());
+            await(pause(3));
+
+            const existingContainers2 = await(this.getServiceContainers());
+            const existingContainerIds2 = existingContainers2.map((container) => {
+                return container.id;
+            });
+//             console.log('CONTAINERS2', JSON.stringify(existingContainerIds2, null, 4));
+
+            if (this.devEntry.require_healthcheck) {
+                await(waitForHealth());
+            }
+
+            const newIds = _.difference(existingContainerIds2, existingContainerIds);
+
+            return newIds;
 
         }
 
@@ -389,22 +483,34 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
         up(force = false) {
 
+            const isRunning = await(this.isRunning());
+
+            if (isRunning && !force) {
+                this.emit('already_running');
+                return;
+            }
+
             debug(`Bringing up service`, this.serviceName);
 
-            await(this.stopAndRemoveExistingContainers(force));
+            await(this.stopExistingContainers(force));
             // await(this.pull());
-            await(this.build(force));
+//             await(this.build(force));
+            await(this.build(true));
             await(this.exportData(force));
-            await(this.bringUp(force));
+            const newContainerIds = await(this.bringUp(false));
+//             console.log('newContainerIds', newContainerIds);
             await(pause(3));
             await(this.verifyStatus());
-            await(this.executeScripts());
+
+            if (newContainerIds.length > 0) {
+                await(this.executeScripts());
+            }
 
         }
 
-        down() {
+        down(force) {
 
-            await(this.stopAndRemoveExistingContainers());
+            await(this.stopExistingContainers(force));
 
         }
 
@@ -418,7 +524,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
         getServiceContainers() {
 
-            return await(docker.getProjectContainers())
+            const res = await(docker.getProjectContainers())
                 .map((container) => {
                     container.data = await(container.inspectAsync());
                     return container;
@@ -426,6 +532,20 @@ exports = module.exports = function(config, docker, rekwire, log) {
                 .filter((container) => {
                     return container.data.Config.Labels['com.docker.compose.service'] === this.serviceName;
                 });
+
+//             console.log('res', res);
+            return res;
+
+        }
+
+        isRunning() {
+
+            const runningContainers = await(this.getServiceContainers())
+                .filter((container) => {
+                    return container.data.State.Status === 'running';
+                });
+
+            return runningContainers.length > 0;
 
         }
 

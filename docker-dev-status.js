@@ -7,20 +7,31 @@ const path = require('path');
 const findProject = require('./lib/project-finder');
 const loadYaml = require('./lib/yaml-loader');
 const errorHandler = require('./lib/error-handler');
-const debug = require('debug')('docker-dev');
-const prioritize = require('./lib/prioritize');
 
 process.on('uncaughtException', errorHandler);
 
-process.on('unhandledRejection', (reason, p) => {
-    console.log('Unhandled Rejection at:', p, 'reason:', reason);
+process.on('unhandledRejection', (err, p) => {
+
+    console.log('');
+
+    if (err.out) {
+        console.log(err.out);
+    } else if (err.err) {
+        console.log(err.err);
+    } else if (err.message) {
+        console.log(err.message);
+    } else if (typeof err === 'string') {
+        console.log(err);
+    }
+
     process.exit(1);
+
 });
 
 program
     .option('-p, --project [project-folder]', 'Project Folder')
     .option('-s, --service [name]', 'Service')
-    .option('-f, --force', 'Remove the containers after stopping them')
+    .option('-f, --force', 'Force the creation of new services, even if they are already running')
     .parse(process.argv);
 
 const projectFolder = findProject(program.project);
@@ -44,6 +55,6 @@ container.constant('logFile', path.resolve(projectFolder, 'docker-dev.log'));
 container.constant('program', program);
 container.constant('yml', yml);
 
-container.service('down', require('./services/commands/down'));
+container.service('status', require('./services/commands/status'));
 
-container.load('down');
+container.load('status');

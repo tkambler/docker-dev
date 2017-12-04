@@ -13,7 +13,8 @@ program
     .command('build', 'Builds one or more services.')
     .command('clone', 'Clone repositories.')
     .command('exec', 'Execute commands.')
-    .command('export', 'Exports files from one or more images.');
+    .command('export', 'Exports files from one or more images.')
+    .command('status', 'Display status information.');
 
 if (!process.argv.slice(2).length || process.argv[2] === '--help' || process.argv[2] === '-h') {
     const banner = figlet.textSync('Docker-Dev', {

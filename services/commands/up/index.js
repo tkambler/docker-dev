@@ -7,6 +7,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
     const devConfig = config.get('dev');
     const _ = require('lodash');
     const ora = require('ora');
+    const open = require('open');
     let spinner = ora().start();
 
     async(() => {
@@ -37,7 +38,9 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 
         await(clone());
 
-        let prioritized = prioritize(config.get('composer:services'));
+        hostfileManager.set(devConfig.hostnames);
+
+        let prioritized = Object.keys(config.get('dev:services'));
 
         if (program.service) {
             if (prioritized.indexOf(program.service) === -1) {
@@ -47,15 +50,19 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
             }
         }
 
-        prioritized.forEach((service) => {
+        let started = 0;
 
-            if (_.isUndefined(devConfig.services[service])) {
-                return;
-            }
+        prioritized.forEach((service) => {
 
             const manager = new ServiceManager(service);
 
-            spinner.info(`Loading service: ${service}`);
+            manager.on('already_running', () => {
+                spinner.info(`Service is already running: ${service}`);
+            });
+
+            manager.on('wait_healthcheck', () => {
+                spinner.info(`Waiting for healthcheck to pass.`);
+            });
 
             manager.on('stopping_containers', ({ count }) => {
                 spinner.info(`Stopping ${count} existing container(s) for service: ${service}`);
@@ -85,16 +92,23 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
                 spinner.info(`Starting service: ${service}`);
             });
 
-            await(manager.up(program.force));
+            manager.on('service_started', () => {
+                spinner.succeed(`Service started: ${service}`);
+                started++;
+            });
 
-            spinner.succeed(`Service started: ${service}`);
+            await(manager.up(program.force));
 
         });
 
         spinner.stop();
-        spinner.succeed(`${prioritized.length} service(s) are ready.`);
+        spinner.succeed(`${started} service(s) were started.`);
 
-        hostfileManager.set(devConfig.hostnames);
+//         if (devConfig.open.length > 0 && !program.service) {
+//             devConfig.open.forEach((url) => {
+//                 open(url);
+//             });
+//         }
 
     })();
 

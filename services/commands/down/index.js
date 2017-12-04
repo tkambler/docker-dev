@@ -13,17 +13,29 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
 
         const services = prioritize(config.get('composer:services')).reverse();
 
-        services.forEach((service) => {
+        let stopped = 0;
 
-            spinner.text = `Stopping service: ${service}`;
+        services.forEach((service) => {
 
             const manager = new ServiceManager(service);
 
-            await(manager.down());
+            const isRunning = await(manager.isRunning());
+
+            if (!isRunning) {
+                return false;
+            }
+
+            spinner.info(`Stopping service: ${service}`);
+
+            await(manager.down(program.force));
 
             spinner.succeed(`Service stopped: ${service}`);
 
+            stopped++;
+
         });
+
+        spinner.succeed(`${stopped} service(s) were stopped.`);
 
         spinner.stop();
 
