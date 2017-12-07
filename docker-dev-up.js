@@ -32,6 +32,7 @@ program
     .option('-p, --project [project-folder]', 'Project Folder')
     .option('-s, --service [name]', 'Service')
     .option('-f, --force', 'Force the creation of new services, even if they are already running')
+    .option('-n, --nobuild', 'Do not build services before bringing them on-line')
     .parse(process.argv);
 
 const projectFolder = findProject(program.project);

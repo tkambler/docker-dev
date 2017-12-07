@@ -50,7 +50,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
                 prioritized = [program.service];
             }
         }
-        
+
         const cacheFrom = [];
         _.each(config.get('composer:services'), (service, serviceName) => {
             cacheFrom.splice(cacheFrom.length, 0, ...(_.get(service, 'build.cache_from') || []));
@@ -111,7 +111,7 @@ exports = module.exports = function(config, program, rekwire, docker, ServiceMan
                 started++;
             });
 
-            await(manager.up(program.force));
+            await(manager.up(program.force, program.nobuild));
 
         });
 

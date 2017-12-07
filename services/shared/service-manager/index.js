@@ -489,7 +489,7 @@ exports = module.exports = function(config, docker, rekwire, log) {
 
         }
 
-        up(force = false) {
+        up(force = false, skipBuilding = false) {
 
             const isRunning = await(this.isRunning());
 
@@ -501,12 +501,11 @@ exports = module.exports = function(config, docker, rekwire, log) {
             debug(`Bringing up service`, this.serviceName);
 
             await(this.stopExistingContainers(force));
-            // await(this.pull());
-//             await(this.build(force));
-            await(this.build(true));
+            if (!skipBuilding) {
+                await(this.build(true));
+            }
             await(this.exportData(force));
             const newContainerIds = await(this.bringUp(false));
-//             console.log('newContainerIds', newContainerIds);
             await(pause(3));
             await(this.verifyStatus());
 
